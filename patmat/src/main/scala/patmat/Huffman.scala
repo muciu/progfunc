@@ -89,6 +89,7 @@ object Huffman {
    * of a leaf is the frequency of the character.
    */
   def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = {
+//    freqs.sortWith( (p1, p2) => if (p1._2 == p2._2) p1._1 < p2._1 else p1._2 < p2._2).map( pair => Leaf(pair._1, pair._2))
     freqs.sortWith( (p1, p2) => p1._2 < p2._2).map( pair => Leaf(pair._1, pair._2))
   }
 
@@ -138,11 +139,11 @@ object Huffman {
    *    the example invocation. Also define the return type of the `until` function.
    *  - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
    */
-  def until(singleton: List[CodeTree] => Boolean, combine: List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): List[CodeTree] = {
-    if (singleton(trees))
+  def until(breakCondition: List[CodeTree] => Boolean, process: List[CodeTree] => List[CodeTree])(trees: List[CodeTree]): List[CodeTree] = {
+    if (breakCondition(trees))
       trees
     else
-      until(singleton, combine)(combine(trees))
+      until(breakCondition, process)(process(trees))
   }
 
   /**
@@ -151,7 +152,9 @@ object Huffman {
    * The parameter `chars` is an arbitrary text. This function extracts the character
    * frequencies from that text and creates a code tree based on them.
    */
-  def createCodeTree(chars: List[Char]): CodeTree = ???
+  def createCodeTree(chars: List[Char]): CodeTree = {
+    until(singleton, combine)(makeOrderedLeafList(times(chars))).head
+  }
 
 
 
@@ -163,7 +166,19 @@ object Huffman {
    * This function decodes the bit sequence `bits` using the code tree `tree` and returns
    * the resulting list of characters.
    */
-  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = ???
+  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
+    def decodeRec(tree:CodeTree, root:CodeTree, bits:List[Bit]): List[Char] = {
+      //bits match {
+        //case Nil => chars(tree).head
+        //case bit :: bitsTail => 
+      tree match {
+	      case Fork(l, r, c, w) => if (bits.head == 0) decodeRec(l, root, bits.tail) else decodeRec(r, root, bits.tail)  
+	      case Leaf(c, w) => c :: (if (bits.isEmpty) Nil else decodeRec(root, root, bits))
+	    }  
+      //}
+    }
+    decodeRec(tree, tree, bits)
+  }
 
   /**
    * A Huffman coding tree for the French language.
@@ -181,7 +196,7 @@ object Huffman {
   /**
    * Write a function that returns the decoded secret
    */
-  def decodedSecret: List[Char] = ???
+  def decodedSecret: List[Char] = decode(frenchCode, secret)
 
 
 
